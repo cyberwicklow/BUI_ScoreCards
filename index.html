@@ -1,0 +1,1411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="BUI Scoring">
+<meta name="theme-color" content="#0a0a0b">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<title>BUI Boxing Scorecard</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#0a0a0b;--bg2:#111113;--bg3:#18181b;--bg4:#222226;
+  --border:#27272a;--border2:#3f3f46;
+  --text:#fafafa;--text2:#a1a1aa;--text3:#52525b;
+  --red:#f43f5e;--red-dim:#2d1019;--red-border:#9f1239;
+  --blue:#60a5fa;--blue-dim:#0c1a2e;--blue-border:#1d4ed8;
+  --gold:#f59e0b;--gold-dim:#1c1407;--gold-border:#92400e;
+  --green:#34d399;--green-dim:#052e16;--green-border:#065f46;
+  --warn:#fb923c;--warn-dim:#1c0e04;
+  --r:8px;--rl:14px;
+  --safe-top:env(safe-area-inset-top,0px);
+  --safe-bottom:env(safe-area-inset-bottom,0px);
+}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--text);font-family:'SF Pro Display',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:16px;line-height:1.5;padding-top:var(--safe-top);padding-bottom:var(--safe-bottom)}
+#app{height:100%;display:flex;flex-direction:column;overflow:hidden}
+.screen{display:none;flex:1;flex-direction:column;overflow:hidden}
+.screen.active{display:flex}
+.scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:40px}
+.hdr{display:flex;align-items:center;gap:10px;padding:12px 16px;background:rgba(10,10,11,0.9);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:0.5px solid var(--border);flex-shrink:0;position:relative;z-index:10}
+.hdr-title{font-size:17px;font-weight:600;flex:1;letter-spacing:-0.3px}
+.hdr-sub{font-size:12px;color:var(--text2)}
+.back{background:var(--bg3);border:0.5px solid var(--border);color:var(--text2);font-size:14px;cursor:pointer;padding:6px 12px;border-radius:20px;font-family:inherit;white-space:nowrap;display:flex;align-items:center;gap:4px}
+.card{background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--rl);padding:16px;margin:10px 14px}
+.slbl{font-size:11px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);margin:16px 14px 6px}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;padding:14px 20px;border-radius:var(--r);border:none;font-size:15px;font-weight:600;cursor:pointer;width:100%;font-family:inherit;letter-spacing:-0.2px;transition:opacity 0.15s,transform 0.1s}
+.btn:active{transform:scale(0.97);opacity:0.85}
+.btn-gold{background:var(--gold);color:#000}
+.btn-ghost{background:var(--bg3);color:var(--text);border:0.5px solid var(--border2)}
+.btn-danger{background:var(--red-dim);color:var(--red);border:0.5px solid var(--red-border)}
+.btn-sm{padding:9px 16px;font-size:13px;width:auto;border-radius:var(--r)}
+label{font-size:13px;color:var(--text2);display:block;margin-bottom:6px;font-weight:500}
+input,select,textarea{width:100%;background:var(--bg3);border:0.5px solid var(--border2);border-radius:var(--r);color:var(--text);font-size:16px;padding:12px 14px;outline:none;font-family:inherit;transition:border-color 0.15s;-webkit-appearance:none}
+input:focus,select:focus,textarea:focus{border-color:var(--gold)}
+input::placeholder{color:var(--text3)}
+select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2352525b' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:calc(100% - 14px) center;padding-right:36px}
+.field{margin-bottom:14px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+/* Autocomplete */
+.ac-wrap{position:relative}
+.ac-list{position:absolute;top:100%;left:0;right:0;background:var(--bg3);border:0.5px solid var(--gold);border-top:none;border-radius:0 0 var(--r) var(--r);z-index:100;max-height:180px;overflow-y:auto;display:none}
+.ac-list.open{display:block}
+.ac-item{padding:11px 14px;cursor:pointer;font-size:14px;border-bottom:0.5px solid var(--border)}
+.ac-item:last-child{border-bottom:none}
+.ac-item:hover,.ac-item:active{background:var(--bg4)}
+/* Fight items */
+.fi{background:var(--bg3);border:0.5px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:border-color 0.15s}
+.fi:active{background:var(--bg4)}
+.fi-badge{width:36px;height:36px;border-radius:10px;background:var(--bg4);border:0.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.fi-body{flex:1;min-width:0}
+.fi-main{font-size:15px;font-weight:600;letter-spacing:-0.2px}
+.fi-sub{font-size:12px;color:var(--text2);margin-top:3px}
+.fi-arr{color:var(--text3);font-size:18px}
+.stt{font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px;letter-spacing:0.3px;white-space:nowrap}
+.sp{background:var(--bg4);color:var(--text3);border:0.5px solid var(--border)}
+.sl{background:var(--warn-dim);color:var(--warn);border:0.5px solid var(--gold-border)}
+.sd{background:var(--green-dim);color:var(--green);border:0.5px solid var(--green-border)}
+.chip{display:inline-flex;align-items:center;gap:6px;background:var(--bg4);border:0.5px solid var(--border);border-radius:20px;padding:5px 12px;font-size:13px;font-weight:500;margin:3px;cursor:pointer;color:var(--text2);transition:all 0.12s;user-select:none}
+.chip.on{background:var(--gold-dim);border-color:var(--gold-border);color:var(--gold)}
+.chip-x{color:var(--text3);font-size:16px;line-height:1;margin-left:2px}
+.pin-big{font-size:52px;font-weight:700;letter-spacing:16px;color:var(--gold);text-align:center;padding:20px 0;font-variant-numeric:tabular-nums}
+.pin-inp{font-size:32px;font-weight:600;letter-spacing:10px;text-align:center;background:var(--bg3);border:0.5px solid var(--border2);border-radius:var(--rl);color:var(--gold);padding:18px;width:100%;-webkit-appearance:none;outline:none;font-family:inherit;transition:border-color 0.15s}
+.pin-inp:focus{border-color:var(--gold)}
+.tabs{display:flex;border-bottom:0.5px solid var(--border);background:var(--bg2);flex-shrink:0}
+.tab{flex:1;padding:13px 8px;text-align:center;font-size:13px;font-weight:600;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;letter-spacing:0.1px;transition:all 0.15s;user-select:none}
+.tab.on{color:var(--gold);border-bottom-color:var(--gold)}
+.empty{text-align:center;padding:48px 24px;color:var(--text3)}
+.empty-icon{font-size:44px;margin-bottom:14px}
+.empty-t{font-size:16px;color:var(--text2);margin-bottom:6px;font-weight:500}
+.empty-s{font-size:13px}
+/* Scoring */
+.tbar{display:flex;background:var(--bg2);border-bottom:0.5px solid var(--border);padding:10px 12px;flex-shrink:0}
+.ts{flex:1;text-align:center;min-width:0}
+.tl{font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:2px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tv{font-size:28px;font-weight:700;letter-spacing:-1px}
+.tv.r{color:var(--red)}.tv.b{color:var(--blue)}
+.tdiv{width:0.5px;background:var(--border);margin:0 6px}
+.rhdr{background:var(--bg3);padding:14px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:0.5px solid var(--border);flex-shrink:0}
+.rlbl{font-size:11px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3)}
+.rnum{font-size:36px;font-weight:700;letter-spacing:-2px;color:var(--text);margin-top:2px}
+.net-row{display:flex;gap:10px;align-items:center;margin-top:4px}
+.net-r{font-size:24px;font-weight:700;color:var(--red)}
+.net-b{font-size:24px;font-weight:700;color:var(--blue)}
+.net-d{font-size:22px;color:var(--text3)}
+.score-halves{display:flex;flex:0 0 auto}
+.sh{flex:1;padding:16px 12px}
+.shl{font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px}
+.shl.r{color:var(--red)}.shl.b{color:var(--blue)}
+.shl-name{font-size:14px;font-weight:600;margin-bottom:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sr{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.sl2{font-size:12px;color:var(--text2);width:82px;flex-shrink:0;font-weight:500}
+.sc-ctrl{display:flex;align-items:center;border:0.5px solid var(--border2);border-radius:var(--r);overflow:hidden;flex:1}
+.sc-btn{flex:1;height:46px;background:var(--bg3);border:none;color:var(--text);font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:inherit;transition:background 0.1s}
+.sc-btn:active{background:var(--bg4)}
+.sc-val{flex:1.2;text-align:center;font-size:20px;font-weight:700;background:var(--bg2);color:var(--text);padding:10px 0;border-left:0.5px solid var(--border);border-right:0.5px solid var(--border)}
+.vdiv{width:0.5px;background:var(--border);flex-shrink:0}
+.swrap{padding:14px 16px;background:var(--bg2);border-top:0.5px solid var(--border);flex-shrink:0}
+.strk{background:var(--bg3);border:0.5px solid var(--border2);border-radius:40px;height:60px;position:relative;overflow:hidden;display:flex;align-items:center}
+.slbl2{position:absolute;width:100%;text-align:center;font-size:14px;font-weight:600;color:var(--text3);pointer-events:none;letter-spacing:0.2px}
+.sthumb{width:52px;height:50px;background:var(--gold);border-radius:32px;position:absolute;left:4px;display:flex;align-items:center;justify-content:center;cursor:grab;user-select:none;touch-action:none;color:#000;font-size:20px;font-weight:700}
+.sthumb.drag{cursor:grabbing}
+.ht{width:100%;border-collapse:collapse;font-size:13px}
+.ht th{background:var(--bg3);padding:8px 10px;text-align:left;font-size:11px;letter-spacing:0.5px;text-transform:uppercase;color:var(--text3);border-bottom:0.5px solid var(--border);font-weight:600}
+.ht td{padding:10px;border-bottom:0.5px solid var(--border)}
+.ht tr:last-child td{border-bottom:none}
+.td-r{color:var(--red);font-weight:700;text-align:center}
+.td-b{color:var(--blue);font-weight:700;text-align:center}
+.td-n{color:var(--text3);text-align:center;font-size:12px}
+.mg{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:16px}
+.mb{background:var(--bg3);border:0.5px solid var(--border);border-radius:var(--r);padding:12px 4px;text-align:center;font-size:14px;font-weight:700;cursor:pointer;color:var(--text2);transition:all 0.12s;user-select:none}
+.mb:active{transform:scale(0.95)}
+.mb.on{background:var(--gold-dim);border-color:var(--gold-border);color:var(--gold)}
+.toast{position:fixed;bottom:calc(24px + var(--safe-bottom));left:50%;transform:translateX(-50%);padding:12px 20px;border-radius:var(--r);font-size:14px;font-weight:600;z-index:9999;opacity:0;transition:opacity 0.25s;white-space:nowrap;pointer-events:none;border:0.5px solid;max-width:90vw;text-align:center}
+.toast.show{opacity:1}
+.tok{background:var(--green-dim);border-color:var(--green-border);color:var(--green)}
+.terr{background:var(--red-dim);border-color:var(--red-border);color:var(--red)}
+.twarn{background:var(--gold-dim);border-color:var(--gold-border);color:var(--warn)}
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:500;display:none;align-items:flex-end;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--rl) var(--rl) 0 0;width:100%;max-width:600px;max-height:90vh;overflow-y:auto;padding:0 0 calc(24px + var(--safe-bottom))}
+.modal-hdr{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:0.5px solid var(--border);position:sticky;top:0;background:var(--bg2);z-index:1}
+.modal-title{font-size:17px;font-weight:600}
+.modal-close{background:var(--bg3);border:0.5px solid var(--border);color:var(--text2);width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;font-family:inherit}
+.modal-body{padding:16px 20px}
+/* Home */
+.hero{padding:40px 20px 28px;text-align:center}
+.hero-org{font-size:10px;font-weight:700;letter-spacing:4px;text-transform:uppercase;color:var(--gold);margin-bottom:16px}
+.hero-badge{display:inline-block;background:var(--gold);color:#000;border-radius:50%;width:64px;height:64px;font-size:32px;line-height:64px;margin-bottom:16px}
+.hero-title{font-size:26px;font-weight:700;margin-bottom:8px;letter-spacing:-0.5px}
+.hero-sub{font-size:15px;color:var(--text2);line-height:1.5}
+.rg{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:0 14px;margin-bottom:16px}
+.rc{background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--rl);padding:22px 14px;cursor:pointer;text-align:center;transition:all 0.15s;user-select:none}
+.rc:active{transform:scale(0.96);background:var(--bg3)}
+.rc-icon{font-size:32px;margin-bottom:12px}
+.rc-name{font-size:16px;font-weight:600;margin-bottom:5px;letter-spacing:-0.3px}
+.rc-desc{font-size:12px;color:var(--text2);line-height:1.5}
+.badge-gold{display:inline-block;background:var(--gold-dim);border:0.5px solid var(--gold-border);color:var(--gold);border-radius:20px;padding:4px 14px;font-size:14px;font-weight:700;letter-spacing:3px}
+.sync-row{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text3)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0;transition:background 0.3s}
+.dot.off{background:var(--red)}
+.dot.connecting{background:var(--warn);animation:blink 1s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+.gold-box{background:var(--gold-dim);border:0.5px solid var(--gold-border);border-radius:var(--rl);padding:20px;margin:10px 14px;text-align:center}
+.pdf-wrap{background:#fff;color:#1a1a1a;padding:24px;font-family:Georgia,serif;border-radius:var(--rl);margin:10px 14px;font-size:11px;overflow-x:auto}
+/* Manage list items */
+.manage-item{display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:0.5px solid var(--border)}
+.manage-item:last-child{border-bottom:none}
+.manage-actions{display:flex;gap:8px}
+.icon-btn{background:var(--bg3);border:0.5px solid var(--border);color:var(--text2);width:32px;height:32px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;font-family:inherit}
+.icon-btn.danger{background:var(--red-dim);border-color:var(--red-border);color:var(--red)}
+.sep{height:0.5px;background:var(--border);margin:12px 0}
+</style>
+</head>
+<body>
+<div id="app">
+<div class="toast" id="toast"></div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal" id="modal">
+    <div class="modal-hdr">
+      <div class="modal-title" id="modal-title">—</div>
+      <button class="modal-close" id="modal-close">✕</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+  </div>
+</div>
+
+<!-- HOME -->
+<div id="s-home" class="screen active">
+  <div class="scroll">
+    <div class="hero">
+      <div class="hero-org">Boxing Union of Ireland</div>
+      <div class="hero-badge">🥊</div>
+      <div class="hero-title">Official Scorecard</div>
+      <div class="hero-sub">Real-time scoring system for BUI events</div>
+    </div>
+    <div class="rg">
+      <div class="rc" id="btn-admin"><div class="rc-icon">⚙️</div><div class="rc-name">Admin</div><div class="rc-desc">Create events, assign judges, export PDF</div></div>
+      <div class="rc" id="btn-judge"><div class="rc-icon">📋</div><div class="rc-name">Judge</div><div class="rc-desc">Join with PIN and score your fights</div></div>
+    </div>
+    <div class="card" style="text-align:center"><div style="font-size:12px;color:var(--text3);line-height:1.8">Admin creates event → shares PIN → Judges join on their phones<br>Scores sync live → Admin exports official PDF at event end</div></div>
+  </div>
+</div>
+
+<!-- ADMIN LOGIN -->
+<div id="s-admin-login" class="screen">
+  <div class="hdr"><button class="back" id="back-admin-login">← Home</button><div class="hdr-title">Admin Login</div></div>
+  <div class="scroll">
+    <div class="card">
+      <div class="field"><label>Admin Password</label><input type="password" id="admin-pw" placeholder="Enter admin password" autocomplete="current-password"></div>
+      <button class="btn btn-gold" id="btn-admin-login">Unlock Admin Panel</button>
+    </div>
+    <div style="text-align:center;font-size:12px;color:var(--text3);padding:10px">Default password: <strong style="color:var(--gold)">bui2024</strong> — change in Admin Settings</div>
+  </div>
+</div>
+
+<!-- ADMIN HOME -->
+<div id="s-admin-home" class="screen">
+  <div class="hdr"><button class="back" id="back-admin-home">← Logout</button><div class="hdr-title">Admin Panel</div><button class="btn-sm btn-ghost back" id="btn-admin-settings" style="width:auto">⚙ Settings</button></div>
+  <div class="scroll">
+    <div id="admin-list"></div>
+    <div style="padding:10px 14px"><button class="btn btn-gold" id="btn-create-event">＋ Create New Event</button></div>
+  </div>
+</div>
+
+<!-- CREATE / EDIT EVENT -->
+<div id="s-create-event" class="screen">
+  <div class="hdr"><button class="back" id="back-create">← Admin</button><div class="hdr-title" id="create-event-title">New Event</div></div>
+  <div class="scroll">
+    <div class="card">
+      <div class="field"><label>Event Name</label><input id="ev-name" placeholder="e.g. BUI Fight Night #12" autocomplete="off"></div>
+      <div class="row2">
+        <div class="field"><label>Date</label><input id="ev-date" type="date"></div>
+        <div class="field"><label>Location</label><input id="ev-location" placeholder="Venue, City" autocomplete="off"></div>
+      </div>
+    </div>
+    <div class="slbl">Judges</div>
+    <div class="card">
+      <div class="field">
+        <label>Add Judge Name</label>
+        <div style="display:flex;gap:8px">
+          <input id="judge-inp" placeholder="Full name" style="flex:1" autocomplete="off">
+          <button class="btn btn-ghost btn-sm" id="btn-add-judge" style="flex-shrink:0;min-width:70px">+ Add</button>
+        </div>
+      </div>
+      <div id="judge-chips" style="display:flex;flex-wrap:wrap;min-height:10px"></div>
+      <div id="judge-count" style="font-size:12px;color:var(--text3);margin-top:10px">No judges added yet</div>
+    </div>
+    <div style="padding:0 14px 16px">
+      <button class="btn btn-gold" id="btn-create-ev">✓ Save Event &amp; Generate PIN</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN EVENT -->
+<div id="s-admin-event" class="screen">
+  <div class="hdr">
+    <button class="back" id="back-admin-event">← Events</button>
+    <div style="flex:1"><div class="hdr-title" id="ae-name">—</div><div class="hdr-sub" id="ae-sub"></div></div>
+    <div class="badge-gold" id="ae-pin" style="font-size:15px;letter-spacing:4px"></div>
+  </div>
+  <div class="tabs">
+    <div class="tab on" id="tab-fights" data-tab="fights">Fights</div>
+    <div class="tab" id="tab-judges" data-tab="judges">Judges</div>
+    <div class="tab" id="tab-export" data-tab="export">Export</div>
+  </div>
+  <div class="scroll" id="tab-content"></div>
+</div>
+
+<!-- ADD / EDIT FIGHT -->
+<div id="s-add-fight" class="screen">
+  <div class="hdr"><button class="back" id="back-add-fight">← Event</button><div class="hdr-title" id="add-fight-title">Add Fight</div></div>
+  <div class="scroll">
+    <div class="card">
+      <div class="row2">
+        <div class="field">
+          <label style="color:var(--red)">Red Corner</label>
+          <div class="ac-wrap">
+            <input id="f-red" placeholder="Fighter name" autocomplete="off">
+            <div class="ac-list" id="ac-red"></div>
+          </div>
+        </div>
+        <div class="field">
+          <label style="color:var(--blue)">Blue Corner</label>
+          <div class="ac-wrap">
+            <input id="f-blue" placeholder="Fighter name" autocomplete="off">
+            <div class="ac-list" id="ac-blue"></div>
+          </div>
+        </div>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label>Red Weigh-in (kg)</label>
+          <input id="f-red-weight" type="number" step="0.1" placeholder="e.g. 50.4" autocomplete="off">
+        </div>
+        <div class="field">
+          <label>Blue Weigh-in (kg)</label>
+          <input id="f-blue-weight" type="number" step="0.1" placeholder="e.g. 50.8" autocomplete="off">
+        </div>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label>Weight Class</label>
+          <select id="f-weight">
+            <option value="Minimumweight">Minimumweight – 47.6 kg</option>
+            <option value="Light Flyweight">Light Flyweight – 49 kg</option>
+            <option value="Flyweight">Flyweight – 50.8 kg</option>
+            <option value="Super Flyweight">Super Flyweight – 52.2 kg</option>
+            <option value="Bantamweight">Bantamweight – 53.5 kg</option>
+            <option value="Super Bantamweight">Super Bantamweight – 55.3 kg</option>
+            <option value="Featherweight">Featherweight – 57.2 kg</option>
+            <option value="Super Featherweight">Super Featherweight – 58.9 kg</option>
+            <option value="Lightweight">Lightweight – 61.2 kg</option>
+            <option value="Super Lightweight">Super Lightweight – 63.5 kg</option>
+            <option value="Welterweight">Welterweight – 66.7 kg</option>
+            <option value="Super Welterweight">Super Welterweight – 69.9 kg</option>
+            <option value="Middleweight">Middleweight – 72.6 kg</option>
+            <option value="Super Middleweight">Super Middleweight – 76.2 kg</option>
+            <option value="Light Heavyweight">Light Heavyweight – 79.4 kg</option>
+            <option value="Cruiserweight">Cruiserweight – 90.7 kg</option>
+            <option value="Heavyweight">Heavyweight – 90.7+ kg</option>
+            <option value="Super Heavyweight">Super Heavyweight – unlimited</option>
+            <option value="Catchweight">Catchweight</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Rounds</label>
+          <select id="f-rounds"><option value="4">4</option><option value="6">6</option><option value="8">8</option><option value="10">10</option><option value="12" selected>12</option></select>
+        </div>
+      </div>
+      <div class="field">
+        <label>Referee</label>
+        <div style="display:flex;gap:8px;align-items:flex-start">
+          <select id="f-referee" style="flex:1"></select>
+          <button class="btn btn-ghost btn-sm" id="btn-manage-refs" style="width:auto;flex-shrink:0">Manage</button>
+        </div>
+      </div>
+    </div>
+    <div class="slbl">Assign Judges</div>
+    <div class="card">
+      <div id="fight-judge-chips" style="display:flex;flex-wrap:wrap"></div>
+      <div id="no-judges-msg" style="font-size:13px;color:var(--text3)"></div>
+    </div>
+    <div style="padding:0 14px 16px"><button class="btn btn-gold" id="btn-add-fight">＋ Save Fight</button></div>
+  </div>
+</div>
+
+<!-- JUDGE JOIN -->
+<div id="s-judge-join" class="screen">
+  <div class="hdr"><button class="back" id="back-judge-join">← Home</button><div class="hdr-title">Judge Login</div></div>
+  <div class="scroll">
+    <div class="card">
+      <div class="field"><label>Your Name</label><input id="j-name" placeholder="As registered by admin" autocomplete="off"></div>
+      <div class="field"><label>Event PIN</label><input class="pin-inp" id="j-pin" placeholder="0000" maxlength="4" inputmode="numeric" autocomplete="off"></div>
+      <div style="margin-top:14px"><button class="btn btn-gold" id="btn-join">→ Join Event</button></div>
+    </div>
+    <div style="text-align:center;font-size:13px;color:var(--text3);padding:10px">Name must match exactly what admin entered</div>
+  </div>
+</div>
+
+<!-- JUDGE EVENT -->
+<div id="s-judge-event" class="screen">
+  <div class="hdr">
+    <button class="back" id="back-judge-event">← Leave</button>
+    <div style="flex:1"><div class="hdr-title" id="je-name"></div><div class="hdr-sub" id="je-judge"></div></div>
+    <div class="sync-row"><div class="dot connecting" id="sync-dot"></div><span id="sync-lbl">Connecting</span></div>
+  </div>
+  <div class="scroll">
+    <div id="judge-fights"></div>
+    <div style="padding:10px 14px"><button class="btn btn-ghost btn-sm" id="btn-refresh-judge" style="width:auto">↻ Refresh</button></div>
+  </div>
+</div>
+
+<!-- SCORING -->
+<div id="s-scoring" class="screen">
+  <div class="hdr">
+    <button class="back" id="back-scoring">← Back</button>
+    <div style="flex:1"><div class="hdr-title" id="sc-title"></div><div class="hdr-sub" id="sc-sub"></div></div>
+  </div>
+  <div class="tbar">
+    <div class="ts"><div class="tl r" id="tot-r-lbl">Red</div><div class="tv r" id="tot-r">0</div></div>
+    <div class="tdiv"></div>
+    <div class="ts"><div class="tl b" id="tot-b-lbl">Blue</div><div class="tv b" id="tot-b">0</div></div>
+  </div>
+  <div class="rhdr">
+    <div><div class="rlbl">Round</div><div class="rnum" id="rnd-num">1</div></div>
+    <div style="text-align:right"><div class="rlbl">Net Score</div><div class="net-row"><div class="net-r" id="net-r">10</div><div class="net-d">–</div><div class="net-b" id="net-b">10</div></div></div>
+  </div>
+  <div class="score-halves">
+    <div class="sh">
+      <div class="shl r">Red Corner</div>
+      <div class="shl-name" id="sc-red-lbl">Fighter</div>
+      <div class="sr"><div class="sl2">Base Score</div><div class="sc-ctrl"><button class="sc-btn" id="adj-bR-dn">−</button><div class="sc-val" id="v-bR">10</div><button class="sc-btn" id="adj-bR-up">+</button></div></div>
+      <div class="sr"><div class="sl2">Deductions</div><div class="sc-ctrl"><button class="sc-btn" id="adj-dR-dn">−</button><div class="sc-val" id="v-dR" style="color:var(--red)">0</div><button class="sc-btn" id="adj-dR-up">+</button></div></div>
+    </div>
+    <div class="vdiv"></div>
+    <div class="sh">
+      <div class="shl b">Blue Corner</div>
+      <div class="shl-name" id="sc-blue-lbl">Fighter</div>
+      <div class="sr"><div class="sl2">Base Score</div><div class="sc-ctrl"><button class="sc-btn" id="adj-bB-dn">−</button><div class="sc-val" id="v-bB">10</div><button class="sc-btn" id="adj-bB-up">+</button></div></div>
+      <div class="sr"><div class="sl2">Deductions</div><div class="sc-ctrl"><button class="sc-btn" id="adj-dB-dn">−</button><div class="sc-val" id="v-dB" style="color:var(--red)">0</div><button class="sc-btn" id="adj-dB-up">+</button></div></div>
+    </div>
+  </div>
+  <div style="padding:10px 14px 0"><div class="field"><label>Round Notes (optional)</label><input id="rnd-notes" placeholder="e.g. knockdown, deduction reason…" autocomplete="off"></div></div>
+  <div class="swrap"><div class="strk" id="sl-track"><div class="slbl2">slide to confirm round →</div><div class="sthumb" id="sl-thumb">✓</div></div></div>
+  <div style="padding:10px 14px 60px"><div id="rnd-hist"></div></div>
+</div>
+
+<!-- END FIGHT -->
+<div id="s-end-fight" class="screen">
+  <div class="hdr"><div class="hdr-title">Lock Scorecard</div><div class="hdr-sub" id="ef-name"></div></div>
+  <div class="scroll">
+    <div class="card"><div style="font-size:14px;font-weight:600;margin-bottom:12px">Final Scores</div><div id="ef-table"></div></div>
+    <div class="card">
+      <div style="font-size:14px;font-weight:600;margin-bottom:12px">Method of Victory</div>
+      <div class="mg" id="method-grid"></div>
+      <div class="field"><label>Final Notes</label><input id="ef-notes" placeholder="Any additional notes…" autocomplete="off"></div>
+    </div>
+    <div style="padding:0 14px 32px"><button class="btn btn-gold" id="btn-lock">🔒 Lock &amp; Submit Scorecard</button></div>
+  </div>
+</div>
+
+</div><!-- #app -->
+<script>
+'use strict';
+// ═══════════════════════════════════
+// CONFIG & CONSTANTS
+// ═══════════════════════════════════
+const FB = 'https://bui-judging-default-rtdb.europe-west1.firebasedatabase.app';
+const METHODS = ['UD','SD','MD','KO','TKO','RTD','DQ','TD','NC','Draw'];
+const DEFAULT_ADMIN_PW = 'bui2024';
+
+// ═══════════════════════════════════
+// STATE
+// ═══════════════════════════════════
+let judges = [];
+let selFJ = [];
+let curEvId = null;
+let editFightId = null; // null = new fight, else editing
+let curJudge = {};
+let scoring = {};
+let selMethod = '';
+let events = {};
+let appData = { adminPw: DEFAULT_ADMIN_PW, referees: [], fighters: [] };
+let toastTid = null;
+let activeAdminTab = 'fights';
+let isAdminLoggedIn = false;
+
+// ═══════════════════════════════════
+// PERSISTENCE
+// ═══════════════════════════════════
+function saveLocal() {
+  try { localStorage.setItem('bui_v2_events', JSON.stringify(events)); } catch(e) {}
+}
+function saveAppData() {
+  try { localStorage.setItem('bui_v2_app', JSON.stringify(appData)); } catch(e) {}
+}
+function loadLocal() {
+  try { const d = localStorage.getItem('bui_v2_events'); if (d) events = JSON.parse(d); } catch(e) {}
+  try { const d = localStorage.getItem('bui_v2_app'); if (d) appData = { ...appData, ...JSON.parse(d) }; } catch(e) {}
+}
+loadLocal();
+
+// ═══════════════════════════════════
+// FIREBASE REST
+// ═══════════════════════════════════
+function fbPut(path, data) { return fetch(FB+path+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)}).catch(()=>null); }
+function fbPatch(path, data) { return fetch(FB+path+'.json',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)}).catch(()=>null); }
+function fbDelete(path) { return fetch(FB+path+'.json',{method:'DELETE'}).catch(()=>null); }
+async function fbGet(path) { try { const r=await fetch(FB+path+'.json'); if(!r.ok) return null; return await r.json(); } catch(e){return null;} }
+
+// Sync appData (referees, fighters) to Firebase
+function syncAppData() {
+  fbPut('/appData', appData);
+  saveAppData();
+}
+async function loadAppData() {
+  const remote = await fbGet('/appData');
+  if (remote && typeof remote === 'object') {
+    appData = { ...appData, ...remote };
+    saveAppData();
+  }
+}
+
+// ═══════════════════════════════════
+// TOAST
+// ═══════════════════════════════════
+function toast(msg, type, dur) {
+  type = type||'ok'; dur = dur||2800;
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'toast show t'+type;
+  clearTimeout(toastTid);
+  toastTid = setTimeout(() => t.className = 'toast', dur);
+}
+
+// ═══════════════════════════════════
+// MODAL
+// ═══════════════════════════════════
+function openModal(title, bodyHTML, onClose) {
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-body').innerHTML = bodyHTML;
+  document.getElementById('modal-overlay').classList.add('open');
+  document._modalOnClose = onClose || null;
+}
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+  if (document._modalOnClose) document._modalOnClose();
+  document._modalOnClose = null;
+}
+
+// ═══════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════
+function go(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const el = document.getElementById(id);
+  if (el) el.classList.add('active');
+  window.scrollTo(0,0);
+  if (id === 's-admin-home') initAdminHome();
+  if (id === 's-admin-event') initAdminEvent();
+  if (id === 's-judge-event') initJudgeEvent();
+  if (id === 's-add-fight') initAddFight();
+}
+
+// ═══════════════════════════════════
+// UTILITIES
+// ═══════════════════════════════════
+function genPin() {
+  const used = Object.values(events).map(e => e.pin);
+  let p; do { p = String(Math.floor(1000+Math.random()*9000)); } while(used.includes(p));
+  return p;
+}
+function hashStr(s) {
+  let h=0; for(let i=0;i<s.length;i++){h=((h<<5)-h)+s.charCodeAt(i);h|=0;}
+  return Math.abs(h).toString(16).toUpperCase().padStart(8,'0');
+}
+
+// ═══════════════════════════════════
+// ADMIN LOGIN
+// ═══════════════════════════════════
+function adminLogin() {
+  const pw = document.getElementById('admin-pw').value;
+  if (pw === appData.adminPw) {
+    isAdminLoggedIn = true;
+    document.getElementById('admin-pw').value = '';
+    go('s-admin-home');
+  } else {
+    toast('Incorrect password', 'err');
+  }
+}
+
+function adminLogout() {
+  isAdminLoggedIn = false;
+  go('s-home');
+}
+
+function showAdminSettings() {
+  openModal('Admin Settings',
+    `<div class="field"><label>Change Admin Password</label>
+      <input type="password" id="new-pw1" placeholder="New password" autocomplete="new-password">
+    </div>
+    <div class="field"><label>Confirm New Password</label>
+      <input type="password" id="new-pw2" placeholder="Confirm password" autocomplete="new-password">
+    </div>
+    <button class="btn btn-gold" id="btn-save-pw" style="margin-bottom:12px">Save New Password</button>
+    <div class="sep"></div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:12px">Manage Fighters Database</div>
+    <button class="btn btn-ghost" id="btn-manage-fighters-settings">Manage Registered Fighters</button>`,
+    null
+  );
+  setTimeout(() => {
+    document.getElementById('btn-save-pw').addEventListener('click', () => {
+      const p1 = document.getElementById('new-pw1').value;
+      const p2 = document.getElementById('new-pw2').value;
+      if (!p1) { toast('Enter a password','err'); return; }
+      if (p1 !== p2) { toast('Passwords do not match','err'); return; }
+      appData.adminPw = p1;
+      syncAppData();
+      toast('Password updated ✓','ok');
+      closeModal();
+    });
+    document.getElementById('btn-manage-fighters-settings').addEventListener('click', () => {
+      closeModal();
+      showManageFighters();
+    });
+  }, 50);
+}
+
+// ═══════════════════════════════════
+// REFEREES MANAGEMENT
+// ═══════════════════════════════════
+function buildRefereeSelect(selectedVal) {
+  const sel = document.getElementById('f-referee');
+  sel.innerHTML = '<option value="">— Select referee —</option>';
+  (appData.referees || []).forEach(r => {
+    const o = document.createElement('option');
+    o.value = r; o.textContent = r;
+    if (r === selectedVal) o.selected = true;
+    sel.appendChild(o);
+  });
+}
+
+function showManageReferees() {
+  const renderBody = () => {
+    const refs = appData.referees || [];
+    return `<div class="field">
+        <label>Add New Referee</label>
+        <div style="display:flex;gap:8px">
+          <input id="new-ref-inp" placeholder="Full name" style="flex:1" autocomplete="off">
+          <button class="btn btn-ghost btn-sm" id="btn-add-ref" style="width:auto;flex-shrink:0">+ Add</button>
+        </div>
+      </div>
+      <div class="sep"></div>
+      <div id="refs-list">
+        ${refs.length ? refs.map((r,i) => `
+          <div class="manage-item">
+            <div style="font-size:14px;font-weight:500">${r}</div>
+            <button class="icon-btn danger" data-ref-idx="${i}">✕</button>
+          </div>`).join('') : '<div style="color:var(--text3);font-size:13px">No referees added yet</div>'}
+      </div>`;
+  };
+  openModal('Manage Referees', renderBody(), () => buildRefereeSelect(document.getElementById('f-referee').value));
+  const attachEvents = () => {
+    const addBtn = document.getElementById('btn-add-ref');
+    if (addBtn) addBtn.addEventListener('click', () => {
+      const v = document.getElementById('new-ref-inp').value.trim();
+      if (!v) { toast('Enter a name','err'); return; }
+      if ((appData.referees||[]).includes(v)) { toast('Already exists','warn'); return; }
+      if (!appData.referees) appData.referees = [];
+      appData.referees.push(v);
+      syncAppData();
+      document.getElementById('modal-body').innerHTML = renderBody();
+      attachEvents();
+    });
+    document.querySelectorAll('[data-ref-idx]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const i = parseInt(btn.dataset.refIdx);
+        appData.referees.splice(i, 1);
+        syncAppData();
+        document.getElementById('modal-body').innerHTML = renderBody();
+        attachEvents();
+      });
+    });
+  };
+  setTimeout(attachEvents, 50);
+}
+
+// ═══════════════════════════════════
+// FIGHTERS DATABASE
+// ═══════════════════════════════════
+function showManageFighters() {
+  const renderBody = () => {
+    const ff = appData.fighters || [];
+    return `<div class="field">
+        <label>Add Fighter Name</label>
+        <div style="display:flex;gap:8px">
+          <input id="new-fighter-inp" placeholder="Full name" style="flex:1" autocomplete="off">
+          <button class="btn btn-ghost btn-sm" id="btn-add-fighter-db" style="width:auto;flex-shrink:0">+ Add</button>
+        </div>
+      </div>
+      <div class="sep"></div>
+      <div id="fighters-list">
+        ${ff.length ? ff.map((f,i) => `
+          <div class="manage-item">
+            <div style="font-size:14px;font-weight:500">${f}</div>
+            <button class="icon-btn danger" data-fighter-idx="${i}">✕</button>
+          </div>`).join('') : '<div style="color:var(--text3);font-size:13px">No fighters in database yet</div>'}
+      </div>`;
+  };
+  openModal('Fighter Database', renderBody(), null);
+  const attachEvents = () => {
+    const addBtn = document.getElementById('btn-add-fighter-db');
+    if (addBtn) addBtn.addEventListener('click', () => {
+      const v = document.getElementById('new-fighter-inp').value.trim();
+      if (!v) { toast('Enter a name','err'); return; }
+      if ((appData.fighters||[]).map(f=>f.toLowerCase()).includes(v.toLowerCase())) { toast('Already exists','warn'); return; }
+      if (!appData.fighters) appData.fighters = [];
+      appData.fighters.push(v);
+      syncAppData();
+      document.getElementById('modal-body').innerHTML = renderBody();
+      attachEvents();
+    });
+    document.querySelectorAll('[data-fighter-idx]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const i = parseInt(btn.dataset.fighterIdx);
+        appData.fighters.splice(i, 1);
+        syncAppData();
+        document.getElementById('modal-body').innerHTML = renderBody();
+        attachEvents();
+      });
+    });
+  };
+  setTimeout(attachEvents, 50);
+}
+
+// Fighter autocomplete
+function setupFighterAC(inputId, listId) {
+  const inp = document.getElementById(inputId);
+  const list = document.getElementById(listId);
+  inp.addEventListener('input', () => {
+    const v = inp.value.trim().toLowerCase();
+    if (!v || v.length < 1) { list.classList.remove('open'); return; }
+    const matches = (appData.fighters||[]).filter(f => f.toLowerCase().includes(v));
+    if (!matches.length) { list.classList.remove('open'); return; }
+    list.innerHTML = matches.slice(0,8).map(f => `<div class="ac-item" data-name="${f}">${f}</div>`).join('');
+    list.classList.add('open');
+  });
+  list.addEventListener('click', e => {
+    const item = e.target.closest('.ac-item');
+    if (!item) return;
+    inp.value = item.dataset.name;
+    list.classList.remove('open');
+    // Auto-save to fighters if not there
+    if (!(appData.fighters||[]).map(f=>f.toLowerCase()).includes(item.dataset.name.toLowerCase())) {
+      if (!appData.fighters) appData.fighters = [];
+      appData.fighters.push(item.dataset.name);
+      syncAppData();
+    }
+  });
+  // Close on outside click
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.ac-wrap')) list.classList.remove('open');
+  });
+}
+
+// ═══════════════════════════════════
+// CREATE / EDIT EVENT
+// ═══════════════════════════════════
+function renderJudgeChips() {
+  const el = document.getElementById('judge-chips');
+  const cnt = document.getElementById('judge-count');
+  if (!judges.length) { el.innerHTML=''; cnt.textContent='No judges added yet'; return; }
+  el.innerHTML = judges.map((j,i) =>
+    `<div class="chip on">${j}<span class="chip-x" data-idx="${i}">✕</span></div>`
+  ).join('');
+  cnt.textContent = judges.length + ' judge'+(judges.length!==1?'s':'')+' added';
+}
+
+function addJudge() {
+  const inp = document.getElementById('judge-inp');
+  const v = inp.value.trim();
+  if (!v) { toast('Enter a name first','err'); return; }
+  if (judges.includes(v)) { toast('Already added','warn'); return; }
+  judges.push(v);
+  inp.value = ''; inp.focus();
+  renderJudgeChips();
+}
+
+function openCreateEvent(editId) {
+  editFightId = null;
+  if (editId) {
+    // Editing existing event
+    const ev = events[editId];
+    curEvId = editId;
+    judges = (ev.judges || []).slice();
+    document.getElementById('ev-name').value = ev.name || '';
+    document.getElementById('ev-date').value = ev.date || '';
+    document.getElementById('ev-location').value = ev.location || '';
+    document.getElementById('create-event-title').textContent = 'Edit Event';
+    document.getElementById('btn-create-ev').textContent = '✓ Save Changes';
+  } else {
+    judges = [];
+    document.getElementById('ev-name').value = '';
+    document.getElementById('ev-date').value = '';
+    document.getElementById('ev-location').value = '';
+    document.getElementById('create-event-title').textContent = 'New Event';
+    document.getElementById('btn-create-ev').textContent = '✓ Save Event & Generate PIN';
+  }
+  renderJudgeChips();
+  go('s-create-event');
+}
+
+function saveEvent() {
+  const name = document.getElementById('ev-name').value.trim();
+  if (!name) { toast('Event name required','err'); return; }
+  if (!judges.length) { toast('Add at least one judge','err'); return; }
+  const isEdit = !!(curEvId && events[curEvId] && document.getElementById('create-event-title').textContent === 'Edit Event');
+  let ev;
+  if (isEdit) {
+    ev = { ...events[curEvId], name, date: document.getElementById('ev-date').value, location: document.getElementById('ev-location').value.trim(), judges: judges.slice() };
+  } else {
+    const id = 'ev_'+Date.now();
+    const pin = genPin();
+    ev = { id, name, date: document.getElementById('ev-date').value, location: document.getElementById('ev-location').value.trim(), pin, judges: judges.slice(), fights:{}, created: Date.now() };
+    curEvId = id;
+  }
+  events[curEvId] = ev;
+  saveLocal();
+  judges = [];
+  renderJudgeChips();
+  go('s-admin-event');
+  toast(isEdit ? 'Event updated ✓' : 'Event created! PIN: '+ev.pin, 'ok', 5000);
+  fbPut('/events/'+curEvId, ev);
+}
+
+function deleteEvent(id) {
+  if (!confirm('Delete this event? This cannot be undone.')) return;
+  delete events[id];
+  saveLocal();
+  fbDelete('/events/'+id);
+  toast('Event deleted','ok');
+  go('s-admin-home');
+}
+
+// ═══════════════════════════════════
+// ADMIN HOME
+// ═══════════════════════════════════
+async function initAdminHome() {
+  renderAdminList();
+  await loadAppData();
+  const remote = await fbGet('/events');
+  if (remote && typeof remote === 'object') { Object.assign(events, remote); saveLocal(); renderAdminList(); }
+}
+
+function renderAdminList() {
+  const el = document.getElementById('admin-list');
+  const evList = Object.values(events).sort((a,b) => b.created-a.created);
+  if (!evList.length) {
+    el.innerHTML='<div class="empty"><div class="empty-icon">📋</div><div class="empty-t">No events yet</div><div class="empty-s">Create your first event below</div></div>';
+    return;
+  }
+  el.innerHTML = '<div class="slbl">Your Events</div>' + evList.map(ev => {
+    const fc = Object.keys(ev.fights||{}).length;
+    return `<div class="fi">
+      <div class="fi-badge">📋</div>
+      <div class="fi-body admin-ev-open" data-id="${ev.id}" style="cursor:pointer">
+        <div class="fi-main">${ev.name}</div>
+        <div class="fi-sub">${ev.date||'No date'} · ${fc} fight${fc!==1?'s':''} · PIN: <strong style="color:var(--gold)">${ev.pin}</strong></div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="icon-btn admin-ev-edit" data-id="${ev.id}" title="Edit">✏️</button>
+        <button class="icon-btn danger admin-ev-delete" data-id="${ev.id}" title="Delete">🗑</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════
+// ADMIN EVENT
+// ═══════════════════════════════════
+async function initAdminEvent() {
+  const ev = events[curEvId];
+  if (!ev) return;
+  document.getElementById('ae-name').textContent = ev.name;
+  document.getElementById('ae-sub').textContent = (ev.date||'')+(ev.location?' · '+ev.location:'');
+  document.getElementById('ae-pin').textContent = ev.pin;
+  renderAdminTab(activeAdminTab);
+  const remote = await fbGet('/events/'+curEvId);
+  if (remote) { events[curEvId]=remote; saveLocal(); renderAdminTab(activeAdminTab); }
+}
+
+function renderAdminTab(tab) {
+  activeAdminTab = tab;
+  ['fights','judges','export'].forEach(t => {
+    document.getElementById('tab-'+t).classList.toggle('on', t===tab);
+  });
+  const el = document.getElementById('tab-content');
+  const ev = events[curEvId]||{};
+
+  if (tab === 'fights') {
+    const fights = Object.values(ev.fights||{}).sort((a,b)=>a.order-b.order);
+    let html = '';
+    if (!fights.length) {
+      html = '<div class="empty"><div class="empty-icon">🥊</div><div class="empty-t">No fights yet</div></div>';
+    } else {
+      html = fights.map((f,i) => {
+        const jnames=(f.judges||[]).map(j=>(ev.judges||[])[j]).filter(Boolean).join(', ')||'None';
+        const locked=(f.judges||[]).filter(ji=>((f.scorecards||{})[ji]||{}).locked).length;
+        const cls={pending:'sp',scoring:'sl',complete:'sd'}[f.status]||'sp';
+        const lbl={pending:'Pending',scoring:'Live',complete:'Done'}[f.status]||'Pending';
+        return `<div class="fi">
+          <div class="fi-badge">${i+1}</div>
+          <div class="fi-body">
+            <div class="fi-main"><span style="color:var(--red)">${f.red}</span> vs <span style="color:var(--blue)">${f.blue}</span></div>
+            <div class="fi-sub">${f.weight} · ${f.rounds} rds · Ref: ${f.referee||'TBA'}</div>
+            <div class="fi-sub">${jnames} · ${locked}/${(f.judges||[]).length} locked</div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+            <div class="stt ${cls}">${lbl}</div>
+            <div style="display:flex;gap:6px">
+              <button class="icon-btn fight-edit-btn" data-fid="${f.id}" title="Edit">✏️</button>
+              <button class="icon-btn danger fight-delete-btn" data-fid="${f.id}" title="Delete">🗑</button>
+            </div>
+          </div>
+        </div>`;
+      }).join('');
+    }
+    el.innerHTML = html + '<div style="padding:10px 14px"><button class="btn btn-ghost btn-sm" id="btn-goto-add-fight" style="width:auto">＋ Add Fight</button></div>';
+    el.querySelector('#btn-goto-add-fight').addEventListener('click', () => { editFightId=null; go('s-add-fight'); });
+    el.querySelectorAll('.fight-edit-btn').forEach(b => b.addEventListener('click', () => openEditFight(b.dataset.fid)));
+    el.querySelectorAll('.fight-delete-btn').forEach(b => b.addEventListener('click', () => deleteFight(b.dataset.fid)));
+
+  } else if (tab === 'judges') {
+    const jj = ev.judges||[];
+    el.innerHTML = '<div class="card"><div style="font-size:14px;font-weight:600;margin-bottom:12px">Registered Judges</div>'
+      + jj.map((j,i) => {
+          const init = j.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+          return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:0.5px solid var(--border)">
+            <div style="display:flex;align-items:center;gap:12px">
+              <div style="width:36px;height:36px;border-radius:50%;background:var(--gold-dim);border:0.5px solid var(--gold-border);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--gold)">${init}</div>
+              <div style="font-weight:600">${j}</div>
+            </div>
+            <div style="font-size:11px;color:var(--blue);background:var(--blue-dim);border:0.5px solid var(--blue-border);border-radius:20px;padding:4px 10px">Judge ${i+1}</div>
+          </div>`;
+        }).join('')
+      + '</div>'
+      + '<div class="gold-box"><div style="font-size:12px;color:var(--gold);margin-bottom:6px;font-weight:600">Event Access PIN</div>'
+      + '<div class="pin-big">'+(ev.pin||'—')+'</div>'
+      + '<div style="font-size:12px;color:var(--text2)">Share with judges — name must match exactly</div></div>';
+
+  } else if (tab === 'export') {
+    renderExportTab();
+  }
+}
+
+// ═══════════════════════════════════
+// ADD / EDIT FIGHT
+// ═══════════════════════════════════
+function initAddFight() {
+  buildRefereeSelect('');
+  setupFighterAC('f-red', 'ac-red');
+  setupFighterAC('f-blue', 'ac-blue');
+  const ev = events[curEvId];
+  selFJ = [];
+  const jel = document.getElementById('fight-judge-chips');
+  const msg = document.getElementById('no-judges-msg');
+  if (!ev||!ev.judges||!ev.judges.length) { msg.textContent='No judges on this event'; jel.innerHTML=''; }
+  else { msg.textContent=''; jel.innerHTML = ev.judges.map((j,i) => `<div class="chip fj-chip" data-idx="${i}">${j}</div>`).join(''); }
+
+  if (editFightId) {
+    document.getElementById('add-fight-title').textContent = 'Edit Fight';
+    document.getElementById('btn-add-fight').textContent = '✓ Save Changes';
+    const f = ev.fights[editFightId];
+    document.getElementById('f-red').value = f.red||'';
+    document.getElementById('f-blue').value = f.blue||'';
+    document.getElementById('f-red-weight').value = f.redWeighIn||'';
+    document.getElementById('f-blue-weight').value = f.blueWeighIn||'';
+    document.getElementById('f-weight').value = f.weight||'';
+    document.getElementById('f-rounds').value = f.rounds||12;
+    buildRefereeSelect(f.referee||'');
+    // restore selected judges
+    selFJ = (f.judges||[]).slice();
+    selFJ.forEach(i => {
+      const chip = document.querySelector(`.fj-chip[data-idx="${i}"]`);
+      if (chip) chip.classList.add('on');
+    });
+  } else {
+    document.getElementById('add-fight-title').textContent = 'Add Fight';
+    document.getElementById('btn-add-fight').textContent = '＋ Save Fight';
+    document.getElementById('f-red').value='';
+    document.getElementById('f-blue').value='';
+    document.getElementById('f-red-weight').value='';
+    document.getElementById('f-blue-weight').value='';
+    document.getElementById('f-rounds').value='12';
+    document.getElementById('f-referee').value='';
+  }
+}
+
+function openEditFight(fid) {
+  editFightId = fid;
+  go('s-add-fight');
+}
+
+function deleteFight(fid) {
+  if (!confirm('Delete this fight?')) return;
+  const ev = events[curEvId];
+  delete ev.fights[fid];
+  saveLocal();
+  fbDelete('/events/'+curEvId+'/fights/'+fid);
+  toast('Fight deleted','ok');
+  renderAdminTab('fights');
+}
+
+function saveFight() {
+  const red = document.getElementById('f-red').value.trim();
+  const blue = document.getElementById('f-blue').value.trim();
+  if (!red||!blue) { toast('Both fighter names required','err'); return; }
+  const ev = events[curEvId];
+  const fid = editFightId || 'f_'+Date.now();
+  const order = editFightId ? ev.fights[fid].order : Object.keys(ev.fights||{}).length+1;
+  const fight = {
+    id: fid, red, blue,
+    redWeighIn: document.getElementById('f-red-weight').value||'',
+    blueWeighIn: document.getElementById('f-blue-weight').value||'',
+    weight: document.getElementById('f-weight').value,
+    rounds: parseInt(document.getElementById('f-rounds').value),
+    referee: document.getElementById('f-referee').value||'',
+    judges: selFJ.slice(),
+    scorecards: editFightId ? (ev.fights[fid].scorecards||{}) : {},
+    status: editFightId ? (ev.fights[fid].status||'pending') : 'pending',
+    order
+  };
+  // Auto-add fighter names to database
+  [red, blue].forEach(name => {
+    if (!(appData.fighters||[]).map(f=>f.toLowerCase()).includes(name.toLowerCase())) {
+      if (!appData.fighters) appData.fighters=[];
+      appData.fighters.push(name);
+    }
+  });
+  syncAppData();
+  if (!ev.fights) ev.fights={};
+  ev.fights[fid] = fight;
+  saveLocal();
+  fbPatch('/events/'+curEvId+'/fights', {[fid]: fight});
+  editFightId = null;
+  toast(editFightId ? 'Fight updated ✓' : 'Fight saved ✓','ok');
+  go('s-admin-event');
+}
+
+// ═══════════════════════════════════
+// JUDGE JOIN
+// ═══════════════════════════════════
+async function judgeJoin() {
+  const name = document.getElementById('j-name').value.trim();
+  const pin = document.getElementById('j-pin').value.trim();
+  if (!name) { toast('Enter your name','err'); return; }
+  if (pin.length!==4) { toast('Enter 4-digit PIN','err'); return; }
+  let ev = Object.values(events).find(e => e.pin===pin);
+  if (!ev) {
+    toast('Looking up event…','ok',1500);
+    const remote = await fbGet('/events');
+    if (remote) { Object.assign(events,remote); saveLocal(); }
+    ev = Object.values(events).find(e => e.pin===pin);
+  }
+  if (!ev) { toast('Invalid PIN — check with admin','err'); return; }
+  const ji = (ev.judges||[]).findIndex(j => j.toLowerCase()===name.toLowerCase());
+  if (ji===-1) { toast('Name not on this event — check spelling','err'); return; }
+  curJudge = { name: ev.judges[ji], eventId: ev.id, judgeIdx: ji };
+  document.getElementById('je-name').textContent = ev.name;
+  document.getElementById('je-judge').textContent = 'Judging as: '+ev.judges[ji];
+  go('s-judge-event');
+}
+
+// ═══════════════════════════════════
+// JUDGE EVENT
+// ═══════════════════════════════════
+async function initJudgeEvent() {
+  setSyncStatus('connecting');
+  const remote = await fbGet('/events/'+curJudge.eventId);
+  if (remote) { events[curJudge.eventId]=remote; saveLocal(); setSyncStatus('live'); }
+  else setSyncStatus('offline');
+  renderJudgeFights();
+}
+
+function setSyncStatus(s) {
+  const dot=document.getElementById('sync-dot'), lbl=document.getElementById('sync-lbl');
+  if(!dot) return;
+  dot.className='dot'+(s==='live'?'':s==='offline'?' off':' connecting');
+  lbl.textContent=s==='live'?'Live':s==='offline'?'Offline':'Connecting';
+}
+
+function renderJudgeFights() {
+  const ev=events[curJudge.eventId];
+  const el=document.getElementById('judge-fights');
+  if(!ev){el.innerHTML='<div class="empty"><div class="empty-t">Event not found</div></div>';return;}
+  const fights=Object.values(ev.fights||{}).filter(f=>(f.judges||[]).includes(curJudge.judgeIdx)).sort((a,b)=>a.order-b.order);
+  if(!fights.length){el.innerHTML='<div class="empty"><div class="empty-icon">⏳</div><div class="empty-t">No fights assigned yet</div><div class="empty-s">Admin will assign you to fights</div></div>';return;}
+  el.innerHTML='<div class="slbl">Your Assigned Fights</div>'+fights.map(f=>{
+    const sc=(f.scorecards||{})[curJudge.judgeIdx];
+    const locked=sc&&sc.locked;
+    const done=sc?(sc.rounds||[]).length:0;
+    const lbl=locked?'Done':done>0?'Rd '+done+'/'+f.rounds:'Not started';
+    const cls=locked?'sd':done>0?'sl':'sp';
+    return `<div class="fi judge-fight-item${locked?' locked-fight':''}" data-fid="${f.id}">
+      <div class="fi-badge">🥊</div>
+      <div class="fi-body">
+        <div class="fi-main"><span style="color:var(--red)">${f.red}</span> vs <span style="color:var(--blue)">${f.blue}</span></div>
+        <div class="fi-sub">${f.weight} · ${f.rounds} rounds · Ref: ${f.referee||'TBA'}</div>
+      </div>
+      <div class="stt ${cls}">${lbl}</div>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════
+// SCORING
+// ═══════════════════════════════════
+function openScoring(fid) {
+  const ev=events[curJudge.eventId];
+  const fight=ev.fights[fid];
+  const sc=(fight.scorecards||{})[curJudge.judgeIdx]||{rounds:[],locked:false};
+  if(sc.locked){toast('Already locked','warn');return;}
+  scoring={fid,eventId:curJudge.eventId,ji:curJudge.judgeIdx,rounds:(sc.rounds||[]).slice(),cur:{bR:10,bB:10,dR:0,dB:0},rnd:(sc.rounds||[]).length+1};
+  fbPatch('/events/'+curJudge.eventId+'/fights/'+fid,{status:'scoring'});
+  document.getElementById('sc-title').textContent=fight.red+' vs '+fight.blue;
+  document.getElementById('sc-sub').textContent=fight.weight+' · '+curJudge.name;
+  document.getElementById('sc-red-lbl').textContent=fight.red;
+  document.getElementById('sc-blue-lbl').textContent=fight.blue;
+  // Totals bar with fighter names + corner colour
+  document.getElementById('tot-r-lbl').textContent='🔴 '+fight.red;
+  document.getElementById('tot-b-lbl').textContent='🔵 '+fight.blue;
+  updateScoring();
+  initSlider();
+  go('s-scoring');
+}
+
+function adj(field,delta){
+  const c=scoring.cur;
+  if(field==='bR')c.bR=Math.max(1,Math.min(10,c.bR+delta));
+  if(field==='bB')c.bB=Math.max(1,Math.min(10,c.bB+delta));
+  if(field==='dR')c.dR=Math.max(0,Math.min(3,c.dR+delta));
+  if(field==='dB')c.dB=Math.max(0,Math.min(3,c.dB+delta));
+  updateScoring();
+}
+
+function updateScoring(){
+  const s=scoring,c=s.cur;
+  const nR=c.bR-c.dR,nB=c.bB-c.dB;
+  document.getElementById('v-bR').textContent=c.bR;
+  document.getElementById('v-bB').textContent=c.bB;
+  document.getElementById('v-dR').textContent=c.dR;
+  document.getElementById('v-dB').textContent=c.dB;
+  document.getElementById('net-r').textContent=nR;
+  document.getElementById('net-b').textContent=nB;
+  document.getElementById('rnd-num').textContent=s.rnd;
+  let tR=0,tB=0;
+  s.rounds.forEach(r=>{tR+=r.nR;tB+=r.nB;});
+  document.getElementById('tot-r').textContent=tR;
+  document.getElementById('tot-b').textContent=tB;
+  renderHist();
+}
+
+function renderHist(){
+  const el=document.getElementById('rnd-hist');
+  const rounds=scoring.rounds;
+  if(!rounds.length){el.innerHTML='';return;}
+  el.innerHTML='<div style="overflow-x:auto"><table class="ht"><thead><tr><th>Rd</th><th style="color:var(--red)">Red</th><th style="color:var(--blue)">Blue</th><th>Notes</th></tr></thead><tbody>'
+    +rounds.map(r=>`<tr><td class="td-n">${r.rnd}</td><td class="td-r">${r.nR}</td><td class="td-b">${r.nB}</td><td style="font-size:11px;color:var(--text3)">${r.notes||''}</td></tr>`).join('')
+    +'</tbody></table></div>';
+}
+
+function submitRound(){
+  const s=scoring,c=s.cur;
+  if(c.bR<10&&c.bB<10)toast('⚠ 10-Point Must: one fighter should score 10','warn');
+  const nR=c.bR-c.dR,nB=c.bB-c.dB;
+  const notes=document.getElementById('rnd-notes').value;
+  s.rounds.push({rnd:s.rnd,bR:c.bR,bB:c.bB,dR:c.dR,dB:c.dB,nR,nB,notes});
+  const scData={judgeIdx:s.ji,rounds:s.rounds.slice(),locked:false};
+  const ev=events[s.eventId];
+  if(!ev.fights[s.fid].scorecards)ev.fights[s.fid].scorecards={};
+  ev.fights[s.fid].scorecards[s.ji]=scData;
+  saveLocal();
+  fbPut('/events/'+s.eventId+'/fights/'+s.fid+'/scorecards/'+s.ji,scData);
+  s.rnd++;s.cur={bR:10,bB:10,dR:0,dB:0};
+  document.getElementById('rnd-notes').value='';
+  const fight=ev.fights[s.fid];
+  if(s.rnd>fight.rounds){goEndFight();}
+  else{updateScoring();toast('Round '+(s.rnd-1)+' saved ✓','ok');}
+}
+
+function leaveScoring(){
+  if(scoring.rounds&&scoring.rounds.length){if(!confirm('Leave scoring? Rounds saved so far are kept.'))return;}
+  go('s-judge-event');
+}
+
+// ═══════════════════════════════════
+// END FIGHT
+// ═══════════════════════════════════
+function goEndFight(){
+  const s=scoring,ev=events[s.eventId],fight=ev.fights[s.fid];
+  document.getElementById('ef-name').textContent=fight.red+' vs '+fight.blue;
+  selMethod='';
+  let tR=0,tB=0;
+  const rows=s.rounds.map(r=>{tR+=r.nR;tB+=r.nB;
+    return `<tr><td class="td-n">${r.rnd}</td><td class="td-r">${r.bR}${r.dR?'−'+r.dR:''}=${r.nR}</td><td class="td-b">${r.bB}${r.dB?'−'+r.dB:''}=${r.nB}</td><td style="font-size:11px;color:var(--text3)">${r.notes||''}</td></tr>`;
+  }).join('');
+  document.getElementById('ef-table').innerHTML=`<div style="overflow-x:auto"><table class="ht">
+    <thead><tr><th>Rd</th><th style="color:var(--red)">${fight.red}</th><th style="color:var(--blue)">${fight.blue}</th><th>Notes</th></tr></thead>
+    <tbody>${rows}</tbody>
+    <tfoot><tr style="background:var(--bg3)"><td style="padding:10px;font-size:11px;color:var(--text3)">Total</td><td class="td-r" style="padding:10px;font-size:18px">${tR}</td><td class="td-b" style="padding:10px;font-size:18px">${tB}</td><td></td></tr></tfoot>
+  </table></div>`;
+  document.getElementById('method-grid').innerHTML=METHODS.map(m=>`<div class="mb method-btn" data-method="${m}">${m}</div>`).join('');
+  go('s-end-fight');
+}
+
+function lockFight(){
+  if(!selMethod){toast('Select method of victory','err');return;}
+  const s=scoring;
+  const scData={judgeIdx:s.ji,rounds:s.rounds.slice(),locked:true,method:selMethod,notes:document.getElementById('ef-notes').value,at:Date.now()};
+  const ev=events[s.eventId];
+  ev.fights[s.fid].scorecards[s.ji]=scData;
+  const fight=ev.fights[s.fid];
+  const allLocked=(fight.judges||[]).every(ji=>((fight.scorecards||{})[ji]||{}).locked);
+  if(allLocked)fight.status='complete';
+  saveLocal();
+  fbPut('/events/'+s.eventId+'/fights/'+s.fid+'/scorecards/'+s.ji,scData);
+  if(allLocked)fbPatch('/events/'+s.eventId+'/fights/'+s.fid,{status:'complete'});
+  toast('Scorecard locked & synced! ✓','ok');
+  go('s-judge-event');
+}
+
+// ═══════════════════════════════════
+// SLIDER
+// ═══════════════════════════════════
+function initSlider(){
+  const track=document.getElementById('sl-track');
+  const old=document.getElementById('sl-thumb');
+  const thumb=old.cloneNode(true);old.replaceWith(thumb);
+  let drag=false,startX=0,curX=0;
+  const maxX=()=>track.offsetWidth-thumb.offsetWidth-8;
+  thumb.style.left='4px';curX=0;
+  const onStart=e=>{drag=true;thumb.classList.add('drag');startX=(e.touches?e.touches[0].clientX:e.clientX)-curX;e.preventDefault();};
+  const onMove=e=>{if(!drag)return;curX=Math.max(0,Math.min((e.touches?e.touches[0].clientX:e.clientX)-startX,maxX()));thumb.style.left=(curX+4)+'px';e.preventDefault();};
+  const onEnd=()=>{if(!drag)return;drag=false;thumb.classList.remove('drag');if(curX>=maxX()*0.82){curX=0;thumb.style.left='4px';submitRound();}else{thumb.style.transition='left 0.3s';thumb.style.left='4px';curX=0;setTimeout(()=>thumb.style.transition='none',320);}};
+  thumb.addEventListener('touchstart',onStart,{passive:false});
+  thumb.addEventListener('mousedown',onStart);
+  document.addEventListener('touchmove',onMove,{passive:false});
+  document.addEventListener('mousemove',onMove);
+  document.addEventListener('touchend',onEnd);
+  document.addEventListener('mouseup',onEnd);
+}
+
+// ═══════════════════════════════════
+// EXPORT / PDF
+// ═══════════════════════════════════
+function renderExportTab(){
+  const ev=events[curEvId];
+  const el=document.getElementById('tab-content');
+  if(!ev){el.innerHTML='';return;}
+  const fights=Object.values(ev.fights||{}).sort((a,b)=>a.order-b.order);
+  if(!fights.length){el.innerHTML='<div class="empty"><div class="empty-icon">📄</div><div class="empty-t">No fights to export</div></div>';return;}
+  const blocks=fights.map(f=>fightBlock(ev,f)).join('<div style="border-top:1px dashed #ccc;margin:14px 0"></div>');
+  el.innerHTML=`<div class="pdf-wrap">
+    <div style="text-align:center;border-bottom:2px solid #1a1a1a;padding-bottom:12px;margin-bottom:16px">
+      <div style="font-size:10px;font-weight:700;letter-spacing:3px;text-transform:uppercase;margin-bottom:6px">Boxing Union of Ireland</div>
+      <div style="font-size:18px;font-weight:700;margin-bottom:4px">${ev.name}</div>
+      <div style="font-size:10px;color:#555">${ev.date||''} ${ev.location?'· '+ev.location:''} · ${new Date().toLocaleDateString()}</div>
+    </div>${blocks}
+    <div style="font-size:8px;color:#999;text-align:center;margin-top:14px;font-family:monospace;border-top:1px solid #eee;padding-top:8px">BUI Scorecard · ${ev.id} · Hash: ${hashStr(JSON.stringify(ev))}</div>
+  </div>
+  <div style="text-align:center;font-size:12px;color:var(--text3);padding:4px 0 8px">Preview — export downloads printable file</div>
+  <div style="padding:0 14px 16px"><button class="btn btn-gold" id="btn-do-export">⬇ Download Official PDF</button></div>`;
+  document.getElementById('btn-do-export').addEventListener('click',doExport);
+}
+
+function fightBlock(ev,f){
+  const jcards=(f.judges||[]).map(ji=>({j:(ev.judges||[])[ji],sc:(f.scorecards||{})[ji]})).filter(x=>x.sc&&x.sc.locked);
+  if(!jcards.length)return`<div style="padding:6px;color:#888;font-size:10px">Fight: ${f.red} vs ${f.blue} — no locked scorecards yet</div>`;
+  const maxR=Math.max(...jcards.map(c=>(c.sc.rounds||[]).length));
+  let tbl=`<table style="width:100%;border-collapse:collapse;font-size:10px"><thead><tr style="background:#f5f5f5"><th style="border:1px solid #ccc;padding:4px 6px">Rd</th>`;
+  jcards.forEach(c=>{tbl+=`<th style="border:1px solid #ccc;padding:4px 6px;color:#c0302e">${(c.j||'J').split(' ')[0]} Red</th><th style="border:1px solid #ccc;padding:4px 6px;color:#1a5fbd">Blue</th>`;});
+  tbl+='</tr></thead><tbody>';
+  for(let r=1;r<=maxR;r++){
+    tbl+=`<tr><td style="border:1px solid #ccc;padding:4px 6px;text-align:center;font-weight:700">${r}</td>`;
+    jcards.forEach(c=>{const rd=(c.sc.rounds||[]).find(x=>x.rnd===r);tbl+=rd?`<td style="border:1px solid #ccc;padding:4px 6px;text-align:center;color:#c0302e;font-weight:700">${rd.nR}</td><td style="border:1px solid #ccc;padding:4px 6px;text-align:center;color:#1a5fbd;font-weight:700">${rd.nB}</td>`:`<td style="border:1px solid #ccc;padding:4px;text-align:center">—</td><td style="border:1px solid #ccc;padding:4px;text-align:center">—</td>`;});
+    tbl+='</tr>';
+  }
+  tbl+='<tr style="background:#f0f0f0"><td style="border:1px solid #ccc;padding:4px 6px;font-weight:700;border-top:2px solid #333">Total</td>';
+  jcards.forEach(c=>{const t=(c.sc.rounds||[]).reduce((a,r)=>({r:a.r+r.nR,b:a.b+r.nB}),{r:0,b:0});tbl+=`<td style="border:1px solid #ccc;padding:4px 6px;text-align:center;color:#c0302e;font-weight:700;border-top:2px solid #333">${t.r}</td><td style="border:1px solid #ccc;padding:4px 6px;text-align:center;color:#1a5fbd;font-weight:700;border-top:2px solid #333">${t.b}</td>`;});
+  tbl+='</tr></tbody></table>';
+  const fh=hashStr(JSON.stringify({id:f.id,cards:jcards.map(c=>c.sc.rounds)}));
+  const weighIn=(f.redWeighIn||f.blueWeighIn)?`<div style="font-size:9px;color:#666;padding:4px 10px;border:1px solid #ccc;border-top:none">Weigh-in: 🔴 ${f.redWeighIn||'—'} kg &nbsp;|&nbsp; 🔵 ${f.blueWeighIn||'—'} kg</div>`:'';
+  return`<div style="margin-bottom:16px">
+    <div style="background:#1a1a1a;color:white;padding:6px 10px;font-size:9px;font-weight:700;letter-spacing:1px;display:flex;justify-content:space-between;border-radius:3px 3px 0 0"><span>${f.weight} — ${f.rounds} Rds — Ref: ${f.referee||'N/A'}</span><span>Card #${fh}</span></div>
+    <div style="display:flex;justify-content:space-between;padding:6px 10px;border:1px solid #ccc;border-top:none;font-size:12px;font-weight:700"><span style="color:#c0302e">🔴 ${f.red}</span><span>vs</span><span style="color:#1a5fbd">🔵 ${f.blue}</span></div>
+    ${weighIn}${tbl}
+    <div style="display:flex;justify-content:space-between;border:1px solid #ccc;border-top:none;padding:5px 10px;font-size:9px"><span>Method: <strong>${jcards[0].sc.method||'—'}</strong></span><span>${jcards.map(c=>c.j).join(', ')}</span><span style="font-family:monospace">ID:${fh}</span></div>
+  </div>`;
+}
+
+async function doExport(){
+  const remote=await fbGet('/events/'+curEvId);
+  const ev=remote||events[curEvId];
+  if(!ev)return;
+  const fights=Object.values(ev.fights||{}).sort((a,b)=>a.order-b.order);
+  const H=hashStr(JSON.stringify(ev));
+  const body=fights.map(f=>{
+    const jcards=(f.judges||[]).map(ji=>({j:(ev.judges||[])[ji],sc:(f.scorecards||{})[ji]})).filter(x=>x.sc&&x.sc.locked);
+    if(!jcards.length)return`<p style="color:#888;font-size:11px">Fight: ${f.red} vs ${f.blue} — no locked scorecards</p>`;
+    const maxR=Math.max(...jcards.map(c=>(c.sc.rounds||[]).length));
+    let tbl=`<table style="width:100%;border-collapse:collapse;font-size:11px"><thead><tr style="background:#f5f5f5"><th style="border:1px solid #ccc;padding:5px">Round</th>`;
+    jcards.forEach(c=>{tbl+=`<th style="border:1px solid #ccc;padding:5px;color:#c0302e">${(c.j||'J').split(' ')[0]} Red</th><th style="border:1px solid #ccc;padding:5px;color:#1a5fbd">Blue</th>`;});
+    tbl+='</tr></thead><tbody>';
+    for(let r=1;r<=maxR;r++){
+      tbl+=`<tr><td style="border:1px solid #ccc;padding:5px;text-align:center;font-weight:700">${r}</td>`;
+      jcards.forEach(c=>{const rd=(c.sc.rounds||[]).find(x=>x.rnd===r);tbl+=rd?`<td style="border:1px solid #ccc;padding:5px;text-align:center;color:#c0302e;font-weight:700">${rd.nR}</td><td style="border:1px solid #ccc;padding:5px;text-align:center;color:#1a5fbd;font-weight:700">${rd.nB}</td>`:`<td style="border:1px solid #ccc;padding:5px;text-align:center">—</td><td style="border:1px solid #ccc;padding:5px;text-align:center">—</td>`;});
+      tbl+='</tr>';
+    }
+    tbl+='<tr style="background:#f0f0f0"><td style="border:1px solid #ccc;padding:5px;font-weight:700;border-top:2px solid #333">Total</td>';
+    jcards.forEach(c=>{const t=(c.sc.rounds||[]).reduce((a,r)=>({r:a.r+r.nR,b:a.b+r.nB}),{r:0,b:0});tbl+=`<td style="border:1px solid #ccc;padding:5px;text-align:center;color:#c0302e;font-weight:700;border-top:2px solid #333">${t.r}</td><td style="border:1px solid #ccc;padding:5px;text-align:center;color:#1a5fbd;font-weight:700;border-top:2px solid #333">${t.b}</td>`;});
+    tbl+='</tr></tbody></table>';
+    const fh=hashStr(JSON.stringify({id:f.id,cards:jcards.map(c=>c.sc.rounds)}));
+    const weighIn=(f.redWeighIn||f.blueWeighIn)?`<div style="font-size:10px;color:#555;padding:5px 12px;border:1px solid #ccc;border-top:none">Weigh-in: 🔴 ${f.redWeighIn||'—'} kg &nbsp;|&nbsp; 🔵 ${f.blueWeighIn||'—'} kg</div>`:'';
+    return`<div style="margin-bottom:24px;page-break-inside:avoid">
+      <div style="background:#1a1a1a;color:white;padding:8px 12px;font-size:10px;font-weight:700;letter-spacing:1px;display:flex;justify-content:space-between;border-radius:3px 3px 0 0"><span>${f.weight} — ${f.rounds} Rounds — Referee: ${f.referee||'N/A'}</span><span>Card #${fh}</span></div>
+      <div style="display:flex;justify-content:space-between;padding:8px 12px;border:1px solid #ccc;border-top:none;font-size:13px;font-weight:700"><span style="color:#c0302e">🔴 ${f.red}</span><span>vs</span><span style="color:#1a5fbd">🔵 ${f.blue}</span></div>
+      ${weighIn}${tbl}
+      <div style="display:flex;justify-content:space-between;border:1px solid #ccc;border-top:none;padding:7px 12px;font-size:10px"><span>Method: <strong>${jcards[0].sc.method||'—'}</strong></span><span>${jcards.map(c=>c.j).join(', ')}</span><span style="font-family:monospace">ID:${fh}</span></div>
+    </div>`;
+  }).join('<hr style="border:none;border-top:1px dashed #ccc;margin:20px 0">');
+
+  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>BUI Official Scorecard — ${ev.name}</title>
+<style>body{font-family:Georgia,serif;color:#1a1a1a;padding:40px;max-width:960px;margin:0 auto}@media print{body{padding:20px}button{display:none}}</style>
+</head><body>
+<div style="text-align:center;border-bottom:3px solid #1a1a1a;padding-bottom:20px;margin-bottom:28px">
+  <div style="font-size:11px;font-weight:700;letter-spacing:4px;text-transform:uppercase;margin-bottom:8px">Boxing Union of Ireland</div>
+  <div style="font-size:24px;font-weight:700;margin-bottom:6px">${ev.name}</div>
+  <div style="font-size:13px;color:#555">${ev.date||''} ${ev.location?'· '+ev.location:''} · Official Scorecard · ${new Date().toLocaleString()}</div>
+</div>
+${body}
+<div style="margin-top:32px;border-top:1px solid #ddd;padding-top:12px;font-size:9px;color:#999;text-align:center;font-family:monospace">BUI Boxing Scorecard System · Event: ${ev.id} · Integrity Hash: ${H}</div>
+<div style="margin-top:16px;text-align:center"><button onclick="window.print()" style="padding:12px 24px;background:#1a1a1a;color:white;border:none;border-radius:6px;font-size:14px;cursor:pointer">Print / Save as PDF</button></div>
+</body></html>`;
+
+  const blob=new Blob([html],{type:'text/html'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download='BUI_'+ev.name.replace(/\s+/g,'_')+'_scorecard.html';a.click();
+  URL.revokeObjectURL(url);
+  toast('Exported! Open file → Print → Save as PDF','ok',4000);
+}
+
+// ═══════════════════════════════════
+// EVENT LISTENERS
+// ═══════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+
+  // Home
+  document.getElementById('btn-admin').addEventListener('click', () => go('s-admin-login'));
+  document.getElementById('btn-judge').addEventListener('click', () => go('s-judge-join'));
+
+  // Admin login
+  document.getElementById('back-admin-login').addEventListener('click', () => go('s-home'));
+  document.getElementById('btn-admin-login').addEventListener('click', adminLogin);
+  document.getElementById('admin-pw').addEventListener('keydown', e => { if(e.key==='Enter') adminLogin(); });
+
+  // Admin home
+  document.getElementById('back-admin-home').addEventListener('click', adminLogout);
+  document.getElementById('btn-create-event').addEventListener('click', () => openCreateEvent(null));
+  document.getElementById('btn-admin-settings').addEventListener('click', showAdminSettings);
+  document.getElementById('admin-list').addEventListener('click', e => {
+    const open = e.target.closest('.admin-ev-open');
+    if (open) { curEvId=open.dataset.id; go('s-admin-event'); return; }
+    const edit = e.target.closest('.admin-ev-edit');
+    if (edit) { openCreateEvent(edit.dataset.id); return; }
+    const del = e.target.closest('.admin-ev-delete');
+    if (del) { deleteEvent(del.dataset.id); }
+  });
+
+  // Create event
+  document.getElementById('back-create').addEventListener('click', () => go('s-admin-home'));
+  document.getElementById('btn-add-judge').addEventListener('click', addJudge);
+  document.getElementById('judge-inp').addEventListener('keydown', e => { if(e.key==='Enter'){e.preventDefault();addJudge();} });
+  document.getElementById('judge-chips').addEventListener('click', e => {
+    const x = e.target.closest('.chip-x');
+    if (x) removeJudge(parseInt(x.dataset.idx));
+  });
+  document.getElementById('btn-create-ev').addEventListener('click', saveEvent);
+
+  function removeJudge(i) { judges.splice(i,1); renderJudgeChips(); }
+
+  // Admin event — tabs
+  ['fights','judges','export'].forEach(t => {
+    document.getElementById('tab-'+t).addEventListener('click', () => renderAdminTab(t));
+  });
+  document.getElementById('back-admin-event').addEventListener('click', () => go('s-admin-home'));
+
+  // Add fight
+  document.getElementById('back-add-fight').addEventListener('click', () => { editFightId=null; go('s-admin-event'); });
+  document.getElementById('btn-add-fight').addEventListener('click', saveFight);
+  document.getElementById('btn-manage-refs').addEventListener('click', showManageReferees);
+  document.getElementById('fight-judge-chips').addEventListener('click', e => {
+    const chip = e.target.closest('.fj-chip');
+    if (!chip) return;
+    const i = parseInt(chip.dataset.idx);
+    const idx = selFJ.indexOf(i);
+    if (idx===-1){selFJ.push(i);chip.classList.add('on');}
+    else{selFJ.splice(idx,1);chip.classList.remove('on');}
+  });
+
+  // Judge join
+  document.getElementById('back-judge-join').addEventListener('click', () => go('s-home'));
+  document.getElementById('btn-join').addEventListener('click', judgeJoin);
+
+  // Judge event
+  document.getElementById('back-judge-event').addEventListener('click', () => go('s-home'));
+  document.getElementById('btn-refresh-judge').addEventListener('click', initJudgeEvent);
+  document.getElementById('judge-fights').addEventListener('click', e => {
+    const item = e.target.closest('.judge-fight-item');
+    if (!item) return;
+    if (item.classList.contains('locked-fight')) { toast('Scorecard locked','warn'); return; }
+    openScoring(item.dataset.fid);
+  });
+
+  // Scoring
+  document.getElementById('adj-bR-dn').addEventListener('click', () => adj('bR',-1));
+  document.getElementById('adj-bR-up').addEventListener('click', () => adj('bR',1));
+  document.getElementById('adj-bB-dn').addEventListener('click', () => adj('bB',-1));
+  document.getElementById('adj-bB-up').addEventListener('click', () => adj('bB',1));
+  document.getElementById('adj-dR-dn').addEventListener('click', () => adj('dR',-1));
+  document.getElementById('adj-dR-up').addEventListener('click', () => adj('dR',1));
+  document.getElementById('adj-dB-dn').addEventListener('click', () => adj('dB',-1));
+  document.getElementById('adj-dB-up').addEventListener('click', () => adj('dB',1));
+  document.getElementById('back-scoring').addEventListener('click', leaveScoring);
+
+  // Method grid & lock
+  document.getElementById('method-grid').addEventListener('click', e => {
+    const mb = e.target.closest('.method-btn');
+    if (!mb) return;
+    selMethod = mb.dataset.method;
+    document.querySelectorAll('.method-btn').forEach(b => b.classList.toggle('on', b.dataset.method===selMethod));
+  });
+  document.getElementById('btn-lock').addEventListener('click', lockFight);
+
+  // Modal close
+  document.getElementById('modal-close').addEventListener('click', closeModal);
+  document.getElementById('modal-overlay').addEventListener('click', e => { if(e.target===document.getElementById('modal-overlay'))closeModal(); });
+
+  // Service worker
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
+});
+</script>
+</body>
+</html>
